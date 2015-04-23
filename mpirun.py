@@ -24,7 +24,7 @@ if rank == 0:
     args = parser.parse_args()
 else:
     args = None
-comm.bcast(args, root=0)
+args = comm.bcast(args, root=0)
 
 # Read data files
 f = h5py.File(args.path2data, 'r')
@@ -51,8 +51,8 @@ for i in xrange(rank, dshape[0], size):
 
 global_max = None
 global_min = None
-comm.allreduce(local_max, global_max, op=MPI.MAX)
-comm.allreduce(local_min, global_min, op=MPI.MAX)
+global_max = comm.allreduce(local_max, global_max, op=MPI.MAX)
+global_min = comm.allreduce(local_min, global_min, op=MPI.MAX)
 
 # # Otsu threshold
 # Calculate histogram
@@ -64,7 +64,7 @@ if rank == 0:
     hist = np.empty(nbins)
 else:
     hist = None
-comm.reduce(local_hist, hist, op=MPI.SUM, root=0)
+hist = comm.reduce(local_hist, hist, op=MPI.SUM, root=0)
 
 # Calculate high and low values after clipping
 bin_centers = otsu.bin_centers(np.linspace(global_min, global_max, nbins+1))
@@ -84,7 +84,7 @@ if rank == 0:
     threshold = otsu.threshold(hist, bin_centers)
 else:
     threshold = None
-comm.bcast(threshold, root=0)
+threshold = comm.bcast(threshold, root=0)
 if args.verbose:
     if rank == 0:
         print("Threshold = %s" % threshold)

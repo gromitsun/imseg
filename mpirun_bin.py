@@ -28,25 +28,30 @@ if rank == 0:
     args = parser.parse_args()
 else:
     args = None
-comm.bcast(args, root=0)
+args = comm.bcast(args, root=0)
 
 # Read data files
 path2data = args.path2data
 z_num = args.z_num
 y_num = args.y_num
 x_num = args.x_num
-flist = glob.glob(path2data)
+flist = glob.glob(path2data + "/*.bin")
 t_num = len(flist)
 dsize = t_num * z_num * y_num * x_num
 dtype = np.float32
 
 # Calculate max & min of data
-local_max = None
-local_min = None
+local_max = - np.inf
+local_min = np.inf
 for i in xrange(rank, t_num, size):
+    if args.verbose:
+        print "Opening file", flist[i]
     dset = np.fromfile(flist[i], dtype=dtype)
+    print np.min(dset), np.max(dset)
     local_max = max(np.max(dset), local_max)
     local_min = min(np.min(dset), local_min)
+    if args.verbose:
+        print "local min", local_min, "local max", local_max
 
 # chunk_size = int(round(num_proj / size))
 # if rank != size - 1:
@@ -58,8 +63,11 @@ for i in xrange(rank, t_num, size):
 
 global_max = None
 global_min = None
-comm.allreduce(local_max, global_max, op=MPI.MAX)
-comm.allreduce(local_min, global_min, op=MPI.MAX)
+global_max = comm.allreduce(local_max, global_max, op=MPI.MAX)
+global_min = comm.allreduce(local_min, global_min, op=MPI.MAX)
+
+if args.verbose:
+    print "global min", global_min, "global max", global_max
 
 # # Otsu threshold
 # Calculate histogram
@@ -72,7 +80,7 @@ if rank == 0:
     hist = np.empty(nbins)
 else:
     hist = None
-comm.reduce(local_hist, hist, op=MPI.SUM, root=0)
+hist = comm.reduce(local_hist, hist, op=MPI.SUM, root=0)
 
 # Calculate high and low values after clipping
 bin_centers = otsu.bin_centers(np.linspace(global_min, global_max, nbins+1))
@@ -92,7 +100,7 @@ if rank == 0:
     threshold = otsu.threshold(hist, bin_centers)
 else:
     threshold = None
-comm.bcast(threshold, root=0)
+threshold = comm.bcast(threshold, root=0)
 if args.verbose:
     if rank == 0:
         print("Threshold = %s" % threshold)
@@ -119,7 +127,7 @@ for i in xrange(rank, t_num, size):
     if args.verbose:
         print("Segmenting projection %d on process %d ..." % (t_frame, rank))
     out_path = args.path2out + '/tframe_%d/' % t_frame
-    im_seg = ImSeg(data_processed)
+    im_seg = ImSeg(data_processed.reshape(z_num, y_num, x_num))
     im_seg.init(thresholds=threshold,
                 diff_sdf_kwargs=kwarg(it=5, dt=0.1),
                 diff_error_kwargs=kwarg(it=20, dt=0.25),
