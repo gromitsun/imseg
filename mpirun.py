@@ -14,7 +14,7 @@ rank = comm.Get_rank()
 if rank == 0:
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path2data")git
+    parser.add_argument("--path2data")
     parser.add_argument("--path2out")
     parser.add_argument("--verbose")
     parser.add_argument("--otsu_bins")
