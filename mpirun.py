@@ -1,7 +1,7 @@
 from mpi4py import MPI
 import h5py
 import numpy as np
-from imseg.segment import ImSeg
+from imseg.segment import ImSeg, kwarg
 from imseg.threshold import otsu
 from imseg.imtools.imclip import imclip_3D_f32, imclip_3D_f64
 
@@ -16,10 +16,11 @@ if rank == 0:
     parser = argparse.ArgumentParser()
     parser.add_argument("--path2data")
     parser.add_argument("--path2out")
-    parser.add_argument("--verbose")
-    parser.add_argument("--otsu_bins")
-    parser.add_argument("--clip_high")
-    parser.add_argument("--clip_low")
+    parser.add_argument("--verbose", type=bool, default=False)
+    parser.add_argument("--otsu_bins", type=int, default=256)
+    parser.add_argument("--clip_high", type=float, default=0.95)
+    parser.add_argument("--clip_low", type=float, default=0.05)
+    parser.add_argument("--input_type", type=int, default=1, help="Type of input data files. 1=binary, 2=hdf5.")
     args = parser.parse_args()
 else:
     args = None
