@@ -47,7 +47,6 @@ for i in xrange(rank, t_num, size):
     if args.verbose:
         print "Opening file", flist[i]
     dset = np.fromfile(flist[i], dtype=dtype)
-    print np.min(dset), np.max(dset)
     local_max = max(np.max(dset), local_max)
     local_min = min(np.min(dset), local_min)
     if args.verbose:
