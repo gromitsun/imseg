@@ -34,24 +34,31 @@ dsize = dset.size
 dtype = dset.dtype
 
 # Calculate max & min of data
-chunk_size = int(round(num_proj / size))
-if rank != size - 1:
-    local_max = np.max(dset[rank * chunk_size: (rank+1) * chunk_size])
-    local_min = np.min(dset[rank * chunk_size: (rank+1) * chunk_size])
-else:
-    local_max = np.max(dset[rank * chunk_size:])
-    local_min = np.min(dset[rank * chunk_size:])
-max = None
-min = None
-comm.allreduce(local_max, max, op=MPI.MAX)
-comm.allreduce(local_min, min, op=MPI.MAX)
+local_max = None
+local_min = None
+for i in xrange(rank, dshape[0], size):
+    local_max = max(np.max(dset[i]), local_max)
+    local_min = min(np.min(dset[i]), local_min)
+
+# chunk_size = int(round(num_proj / size))
+# if rank != size - 1:
+#     local_max = np.max(dset[rank * chunk_size: (rank+1) * chunk_size])
+#     local_min = np.min(dset[rank * chunk_size: (rank+1) * chunk_size])
+# else:
+#     local_max = np.max(dset[rank * chunk_size:])
+#     local_min = np.min(dset[rank * chunk_size:])
+
+global_max = None
+global_min = None
+comm.allreduce(local_max, global_max, op=MPI.MAX)
+comm.allreduce(local_min, global_min, op=MPI.MAX)
 
 # # Otsu threshold
 # Calculate histogram
 nbins = args.otsu_bins
 local_hist = np.zeros(nbins)
 for proj in xrange(rank, num_proj, size):
-    local_hist += np.histogram(dset[proj], bins=nbins, range=(min, max))[0]
+    local_hist += np.histogram(dset[proj], bins=nbins, range=(global_min, global_max))[0]
 if rank == 0:
     hist = np.empty(nbins)
 else:
@@ -59,7 +66,7 @@ else:
 comm.reduce(local_hist, hist, op=MPI.SUM, root=0)
 
 # Calculate high and low values after clipping
-bin_centers = otsu.bin_centers(np.linspace(min, max, nbins+1))
+bin_centers = otsu.bin_centers(np.linspace(global_min, global_max, nbins+1))
 cumsum = np.cumsum(hist)
 low_index = np.abs(cumsum - args.clip_low * dsize).argmin()
 high_index = np.abs(cumsum - args.clip_high * dsize).argmin()
