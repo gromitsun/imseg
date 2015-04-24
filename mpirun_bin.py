@@ -45,7 +45,7 @@ local_max = - np.inf
 local_min = np.inf
 for i in xrange(rank, t_num, size):
     if args.verbose:
-        print "Opening file", flist[i]
+        print("Opening file %s" % flist[i])
     dset = np.fromfile(flist[i], dtype=dtype)
     local_max = max(np.max(dset), local_max)
     local_min = min(np.min(dset), local_min)
@@ -66,13 +66,21 @@ global_max = comm.allreduce(local_max, global_max, op=MPI.MAX)
 global_min = comm.allreduce(local_min, global_min, op=MPI.MAX)
 
 if args.verbose:
-    print "global min", global_min, "global max", global_max
+    if rank == 0:
+        print "global min", global_min, "global max", global_max
+    comm.Barrier()
 
 # # Otsu threshold
 # Calculate histogram
+if args.verbose:
+    if rank == 0:
+        print("Begin calculating histograms ...")
+    comm.Barrier()
 nbins = args.otsu_bins
 local_hist = np.zeros(nbins)
 for i in xrange(rank, t_num, size):
+    if args.verbose:
+        print("Opening file %s" % flist[i])
     dset = np.fromfile(flist[i], dtype=dtype)
     local_hist += np.histogram(dset, bins=nbins, range=(global_min, global_max))[0]
 if rank == 0:
@@ -82,20 +90,36 @@ else:
 hist = comm.reduce(local_hist, hist, op=MPI.SUM, root=0)
 
 # Calculate high and low values after clipping
+if args.verbose:
+    if rank == 0:
+        print("Calculating low and high values after clipping ...")
+    comm.Barrier()
 bin_centers = otsu.bin_centers(np.linspace(global_min, global_max, nbins+1))
 cumsum = np.cumsum(hist)
 low_index = np.abs(cumsum - args.clip_low * dsize).argmin()
 high_index = np.abs(cumsum - args.clip_high * dsize).argmin()
 low_value, high_value = bin_centers[(low_index, high_index)]
+if args.verbose:
+    if rank == 0:
+        print("Clipped data will have low = %s and high = %s" % (low_value, high_value))
+    comm.Barrier()
 
 # Calculate Otsu threshold
+if args.verbose:
+    if rank == 0:
+        print("Begin calculating Ostu threshold ...")
+    comm.Barrier()
 if rank == 0:
     # Clip the histogram
+    if args.verbose:
+        print("Clipping histogram ...")
     hist[low_index] += cumsum[low_index - 1]
     hist[high_index] += cumsum[-1] - cumsum[high_index]
     hist[:low_index] = 0
     hist[high_index+1:] = 0
     # Calculate threshold
+    if args.verbose:
+        print("Calculating Ostu threshold ...")
     threshold = otsu.threshold(hist, bin_centers)
 else:
     threshold = None
@@ -108,8 +132,12 @@ if args.verbose:
 # Initialize place holder
 data_processed = np.empty(z_num, y_num, x_num, dtype=dtype)
 for i in xrange(rank, t_num, size):
+    if args.verbose:
+        print("Opening file %s" % flist[i])
     dset = np.fromfile(flist[i], dtype=dtype)
     # Clip & normalize data
+    if args.verbose:
+        print("Clipping data with low = %s and high = %s" % (low_value, high_value))
     if dtype == np.float64:
         imclip_3D_f64.clip_norm(dset, data_processed, low_value, high_value)
     elif dtype == np.float32:
@@ -141,7 +169,7 @@ for i in xrange(rank, t_num, size):
         im_seg.iterate(10)
         im_seg.save()
 
-comm.Barier()
+comm.Barrier()
 if rank == 0:
     print("All done!")
 
