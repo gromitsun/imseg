@@ -34,7 +34,7 @@ cpdef inline void clip(float[:, :, :] arr, float[:, :, :] out, float low_value, 
                         out[x, y, z] = high_value
                         
                         
-cpdef void clip_norm(double[:, :, :] arr, double[:, :, :] out, float low_value, float high_value):
+cpdef void clip_norm(float[:, :, :] arr, float[:, :, :] out, float low_value, float high_value):
     cdef ssize_t x, nx = arr.shape[0]
     cdef ssize_t y, ny = arr.shape[1]
     cdef ssize_t z, nz = arr.shape[2]

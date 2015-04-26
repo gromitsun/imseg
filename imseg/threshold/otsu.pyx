@@ -22,6 +22,10 @@ def threshold(hist, bin_centers):
     """
 
     # class probabilities for all possible thresholds
+    if (hist <= 0).any():
+        valid = hist > 0
+        hist = hist[valid]
+        bin_centers = bin_centers[valid]
     weight1 = np.cumsum(hist)
     weight2 = np.cumsum(hist[::-1])[::-1]
     # class means for all possible thresholds
@@ -31,12 +35,14 @@ def threshold(hist, bin_centers):
     # Clip ends to align class 1 and class 2 variables:
     # The last value of `weight1`/`mean1` should pair with zero values in
     # `weight2`/`mean2`, which do not exist.
-    variance12 = weight1[:-1] * weight2[1:] * (mean1[:-1] - mean2[1:]) ** 2
+    n = len(bin_centers)
+    variance12 = weight1[:n-1] * weight2[1:] * (mean1[:n-1] - mean2[1:]) ** 2
 
     idx = np.argmax(variance12)
-    threshold = bin_centers[:-1][idx]
+    threshold = bin_centers[:n-1][idx]
     return threshold
 
 
 def bin_centers(bin_edges):
-    return (bin_edges[:-1] + bin_edges[1:]) / 2.
+    n = len(bin_edges)
+    return (bin_edges[:n-1] + bin_edges[1:]) / 2.
