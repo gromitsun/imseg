@@ -162,7 +162,7 @@ class ImSeg(object):
             self.diffuse_sdf()
             self.reinitialize()
             self.iter_count += 1
-            if self.debug:
+            if self.debug and ((self.iter_count % self.debug == 0) or (self.iter_count == 1)):
                 self.show(save_path=self.out_path)
 
     def show_contour(self, im_slice=Ellipsis, save_path=None, show=True):
