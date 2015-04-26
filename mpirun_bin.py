@@ -4,7 +4,11 @@ from mpi4py import MPI
 import numpy as np
 from imseg.segment import ImSeg, kwarg
 from imseg.threshold import otsu
-from imseg.imtools.imclip import imclip_3D_f32, imclip_3D_f64
+from imseg.imtools.imclip import imclip_1D_f32, imclip_1D_f64
+
+
+def path_to_num(path, prefix="object_", suffix=".bin"):
+    return int(os.path.basename(path).strip(prefix).strip(suffix))
 
 
 comm = MPI.COMM_WORLD
@@ -65,6 +69,8 @@ global_min = None
 global_max = comm.allreduce(local_max, global_max, op=MPI.MAX)
 global_min = comm.allreduce(local_min, global_min, op=MPI.MAX)
 
+# global_min = -0.0065692
+# global_max = 0.00650802
 if args.verbose:
     if rank == 0:
         print "global min", global_min, "global max", global_max
@@ -77,39 +83,41 @@ if args.verbose:
         print("Begin calculating histograms ...")
     comm.Barrier()
 nbins = args.otsu_bins
-local_hist = np.zeros(nbins)
+local_hist = np.zeros(nbins, dtype=int)
+# t_num = 2 ###
+# dsize = t_num * z_num * y_num * x_num
+# flist = flist[100:]
 for i in xrange(rank, t_num, size):
     if args.verbose:
         print("Opening file %s" % flist[i])
     dset = np.fromfile(flist[i], dtype=dtype)
     local_hist += np.histogram(dset, bins=nbins, range=(global_min, global_max))[0]
 if rank == 0:
-    hist = np.empty(nbins)
+    hist = np.empty(nbins, dtype=int)
 else:
     hist = None
-hist = comm.reduce(local_hist, hist, op=MPI.SUM, root=0)
+    # hist = np.empty(nbins, dtype=int)
+comm.Reduce(local_hist, hist, op=MPI.SUM, root=0)
 
-# Calculate high and low values after clipping
-if args.verbose:
-    if rank == 0:
-        print("Calculating low and high values after clipping ...")
-    comm.Barrier()
-bin_centers = otsu.bin_centers(np.linspace(global_min, global_max, nbins+1))
-cumsum = np.cumsum(hist)
-low_index = np.abs(cumsum - args.clip_low * dsize).argmin()
-high_index = np.abs(cumsum - args.clip_high * dsize).argmin()
-low_value, high_value = bin_centers[(low_index, high_index)]
-if args.verbose:
-    if rank == 0:
-        print("Clipped data will have low = %s and high = %s" % (low_value, high_value))
-    comm.Barrier()
-
-# Calculate Otsu threshold
-if args.verbose:
-    if rank == 0:
-        print("Begin calculating Ostu threshold ...")
-    comm.Barrier()
 if rank == 0:
+    # Calculate high and low values after clipping
+    if args.verbose:
+        print("Calculating low and high values after clipping ...")
+    bin_centers = otsu.bin_centers(np.linspace(global_min, global_max, nbins+1))
+    cumsum = np.cumsum(hist)
+    low_index = np.abs(cumsum - (args.clip_low * dsize)).argmin()
+    high_index = np.abs(cumsum - (args.clip_high * dsize)).argmin()
+    print bin_centers.shape, low_index, high_index, args.clip_high, args.clip_low, dsize
+    print cumsum
+    print np.abs(cumsum - args.clip_low * dsize)
+    print np.abs(cumsum - args.clip_high * dsize)
+    low_value, high_value = bin_centers[[low_index, high_index]]
+    if args.verbose:
+        print("Clipped data will have low = %s and high = %s" % (low_value, high_value))
+
+    # Calculate Otsu threshold
+    if args.verbose:
+        print("Begin calculating Ostu threshold ...")
     # Clip the histogram
     if args.verbose:
         print("Clipping histogram ...")
@@ -121,39 +129,59 @@ if rank == 0:
     if args.verbose:
         print("Calculating Ostu threshold ...")
     threshold = otsu.threshold(hist, bin_centers)
+    if args.verbose:
+        print("Threshold (before normalization) = %s" % threshold)
+    threshold = (threshold - low_value) / (high_value - low_value)
+    if args.verbose:
+        print("Threshold (after normalization) = %s" % threshold)
 else:
     threshold = None
+    low_value = None
+    high_value = None
 threshold = comm.bcast(threshold, root=0)
-if args.verbose:
-    if rank == 0:
-        print("Threshold = %s" % threshold)
+low_value = comm.bcast(low_value, root=0)
+high_value = comm.bcast(high_value, root=0)
 
+# threshold = 0.428571428571
+# low_value = -0.000209380117187
+# high_value = 0.000148200117188
+# threshold = 0.444444444444
+# low_value = -0.000221107149628
+# high_value = 0.000154846320584
 # # Iterate through projections
 # Initialize place holder
-data_processed = np.empty(z_num, y_num, x_num, dtype=dtype)
+data_processed = np.empty((z_num * y_num * x_num), dtype=dtype)
+dir_preprocessed = args.path2out + "/preprocessed/"
 for i in xrange(rank, t_num, size):
     if args.verbose:
         print("Opening file %s" % flist[i])
     dset = np.fromfile(flist[i], dtype=dtype)
     # Clip & normalize data
     if args.verbose:
-        print("Clipping data with low = %s and high = %s" % (low_value, high_value))
+        print("Clipping and normalizing data with low = %s and high = %s" % (low_value, high_value))
     if dtype == np.float64:
-        imclip_3D_f64.clip_norm(dset, data_processed, low_value, high_value)
+        imclip_1D_f64.clip_norm(dset, data_processed, low_value, high_value)
     elif dtype == np.float32:
-        imclip_3D_f32.clip_norm(dset, data_processed, low_value, high_value)
+        imclip_1D_f32.clip_norm(dset, data_processed, low_value, high_value)
     # Save preprocessed data
     t_frame = path_to_num(flist[i])
+    if rank == 0:
+        if not os.path.exists(dir_preprocessed):
+            if args.verbose:
+                print("Creating directory: %s" % dir_preprocessed)
+            os.makedirs(dir_preprocessed)
+            comm.Barrier()
+    file_preprocessed = dir_preprocessed + "/object_pre_" + str(t_frame) + ".bin"
     if args.verbose:
-        print("Saving preprocessed data %s" % args.path2out+'/object_pre_'+str(t_frame))
-    fout = open(args.path2out+'/preprocessed/object_pre_'+str(t_frame), 'wb')
+        print("Saving preprocessed data %s" % file_preprocessed)
+    fout = open(file_preprocessed, 'wb')
     fout.write(data_processed.tobytes())
     fout.close()
 
     # Segmentation
     if args.verbose:
         print("Segmenting projection %d on process %d ..." % (t_frame, rank))
-    out_path = args.path2out + '/tframe_%d/' % t_frame
+    dir_seg = args.path2out + '/tframe_%d/' % t_frame
     im_seg = ImSeg(data_processed.reshape(z_num, y_num, x_num))
     im_seg.init(thresholds=threshold,
                 diff_sdf_kwargs=kwarg(it=5, dt=0.1),
@@ -161,18 +189,15 @@ for i in xrange(rank, t_num, size):
                 diff_ave_kwargs=kwarg(it=5, dt=0.1),
                 reinit_sdf_kwargs=kwarg(niter=5, dt=0.1),
                 init_reinit_sdf_kwargs=kwarg(niter=50, dt=0.1),
-                im_slice=(slice(None), slice(None), 512 - 350),
-                out_path=out_path, debug=True, verbose=args.verbose)
+                im_slice=(slice(None), slice(None), 512),
+                out_path=dir_seg, debug=True, verbose=args.verbose)
     im_seg.initialize()
 
-    for i in xrange(10):
-        im_seg.iterate(10)
-        im_seg.save()
-
+    # for i in xrange(10):
+    #     im_seg.iterate(10)
+    #     im_seg.save()
+    im_seg.iterate(50)
+    im_seg.save()
 comm.Barrier()
 if rank == 0:
     print("All done!")
-
-
-def path_to_num(path, prefix="object_", suffix=".bin"):
-    return int(os.path.basename(path).strip(prefix).strip(suffix))
