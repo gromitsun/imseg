@@ -148,7 +148,7 @@ high_value = comm.bcast(high_value, root=0)
 # threshold = 0.444444444444
 # low_value = -0.000221107149628
 # high_value = 0.000154846320584
-# # Iterate through projections
+# # Iterate through time frames
 # Initialize place holder
 data_processed = np.empty((z_num * y_num * x_num), dtype=dtype)
 dir_preprocessed = args.path2out + "/preprocessed/"

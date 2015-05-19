@@ -89,7 +89,7 @@ if args.verbose:
     if rank == 0:
         print("Threshold = %s" % threshold)
 
-# # Iterate through projections
+# # Iterate through time frames
 # Initialize place holder
 data_processed = np.empty(*dshape[1:], dtype=dtype)
 for proj in xrange(rank, num_proj, size):
