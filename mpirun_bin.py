@@ -22,6 +22,7 @@ if rank == 0:
     parser.add_argument("--path2data")
     parser.add_argument("--path2out")
     parser.add_argument("--verbose", type=bool, default=False)
+    parser.add_argument("--overwrite", type=bool, default=False)
     parser.add_argument("--otsu_bins", type=int, default=256)
     parser.add_argument("--clip_high", type=float, default=0.95)
     parser.add_argument("--clip_low", type=float, default=0.05)
@@ -29,6 +30,7 @@ if rank == 0:
     parser.add_argument("--z_num", type=int, help="Number of pixels in z.")
     parser.add_argument("--y_num", type=int, help="Number of pixels in y.")
     parser.add_argument("--x_num", type=int, help="Number of pixels in x.")
+    parser.add_argument("--iterations", type=int, default=10, help="Number of iterations used in segmentation.")
     args = parser.parse_args()
 else:
     args = None
@@ -153,35 +155,48 @@ high_value = comm.bcast(high_value, root=0)
 data_processed = np.empty((z_num * y_num * x_num), dtype=dtype)
 dir_preprocessed = args.path2out + "/preprocessed/"
 for i in xrange(rank, t_num, size):
-    if args.verbose:
-        print("Opening file %s" % flist[i])
-    dset = np.fromfile(flist[i], dtype=dtype)
-    # Clip & normalize data
-    if args.verbose:
-        print("Clipping and normalizing data with low = %s and high = %s" % (low_value, high_value))
-    if dtype == np.float64:
-        imclip_1D_f64.clip_norm(dset, data_processed, low_value, high_value)
-    elif dtype == np.float32:
-        imclip_1D_f32.clip_norm(dset, data_processed, low_value, high_value)
-    # Save preprocessed data
+    # Input and ouput paths
     t_frame = path_to_num(flist[i])
-    if rank == 0:
-        if not os.path.exists(dir_preprocessed):
-            if args.verbose:
-                print("Creating directory: %s" % dir_preprocessed)
-            os.makedirs(dir_preprocessed)
-            comm.Barrier()
     file_preprocessed = dir_preprocessed + "/object_pre_" + str(t_frame) + ".bin"
-    if args.verbose:
-        print("Saving preprocessed data %s" % file_preprocessed)
-    fout = open(file_preprocessed, 'wb')
-    fout.write(data_processed.tobytes())
-    fout.close()
+    dir_seg = args.path2out + '/tframe_%d/' % t_frame
+    # Check if already finished
+    file_npz = dir_seg+'/imseg_iter_%d.npz' % args.iterations
+    if (not args.overwrite) and (os.path.exists(file_npz)):
+        if args.verbose:
+            print("Skipped tframe %d, iteration %d. File %s already exists." % (t_frame, args.iterations, file_npz))
+        continue
+    # Preprocess data
+    if args.overwrite or (not os.path.exists(file_preprocessed)):
+        if args.verbose:
+            print("Opening file %s" % flist[i])
+        dset = np.fromfile(flist[i], dtype=dtype)
+        # Clip & normalize data
+        if args.verbose:
+            print("Clipping and normalizing data with low = %s and high = %s" % (low_value, high_value))
+        if dtype == np.float64:
+            imclip_1D_f64.clip_norm(dset, data_processed, low_value, high_value)
+        elif dtype == np.float32:
+            imclip_1D_f32.clip_norm(dset, data_processed, low_value, high_value)
+        # Save preprocessed data
+        if rank == 0:
+            if not os.path.exists(dir_preprocessed):
+                if args.verbose:
+                    print("Creating directory: %s" % dir_preprocessed)
+                os.makedirs(dir_preprocessed)
+                comm.Barrier()
+        if args.verbose:
+            print("Saving preprocessed data %s" % file_preprocessed)
+        fout = open(file_preprocessed, 'wb')
+        fout.write(data_processed.tobytes())
+        fout.close()
+    else:
+        if args.verbose:
+            print("Reading preprocessed data from %s ..." % file_preprocessed)
+        data_processed = np.fromfile(file_preprocessed, dtype=dtype)
 
     # Segmentation
     if args.verbose:
         print("Segmenting projection %d on process %d ..." % (t_frame, rank))
-    dir_seg = args.path2out + '/tframe_%d/' % t_frame
     im_seg = ImSeg(data_processed.reshape(z_num, y_num, x_num))
     im_seg.init(thresholds=threshold,
                 diff_sdf_kwargs=kwarg(it=5, dt=0.1),
@@ -196,7 +211,7 @@ for i in xrange(rank, t_num, size):
     # for i in xrange(10):
     #     im_seg.iterate(10)
     #     im_seg.save()
-    im_seg.iterate(50)
+    im_seg.iterate(args.iterations)
     im_seg.save()
 comm.Barrier()
 if rank == 0:
