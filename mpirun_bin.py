@@ -31,6 +31,8 @@ if rank == 0:
     parser.add_argument("--y_num", type=int, help="Number of pixels in y.")
     parser.add_argument("--x_num", type=int, help="Number of pixels in x.")
     parser.add_argument("--iterations", type=int, default=10, help="Number of iterations used in segmentation.")
+    parser.add_argument("--load", type=int, default=0,
+                        help="Load previous finished segmentation files with iteration number specified.")
     args = parser.parse_args()
 else:
     args = None
@@ -206,12 +208,21 @@ for i in xrange(rank, t_num, size):
                 init_reinit_sdf_kwargs=kwarg(niter=50, dt=0.1),
                 im_slice=(slice(None), slice(None), 512),
                 out_path=dir_seg, debug=True, verbose=args.verbose)
-    im_seg.initialize()
+    # Attempt to load earlier results
+    file_load = dir_seg+'/imseg_iter_%d.npz' % args.load
+    if args.load and os.path.exists(file_load):
+        if args.verbose:
+            print("Loading segmentation result from %s ..." % file_load)
+        im_seg.load(file_load)
+        iterations = args.iterations - args.load
+    else:
+        iterations = args.iterations
+        im_seg.initialize()
 
     # for i in xrange(10):
     #     im_seg.iterate(10)
     #     im_seg.save()
-    im_seg.iterate(args.iterations)
+    im_seg.iterate(iterations)
     im_seg.save()
 comm.Barrier()
 if rank == 0:
