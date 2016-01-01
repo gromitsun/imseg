@@ -177,6 +177,7 @@ class ImSeg(object):
         plt.imshow(self.im_ave[im_slice])
         plt.colorbar()
         if outdir is not None:
+            prep_dir(outdir)
             plt.savefig(outdir + 'im_ave_iter_%d' % self.iter_count)
         plt.figure('im_error')
         plt.title('im_error, iteration %d' % self.iter_count)
