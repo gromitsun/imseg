@@ -16,15 +16,15 @@ reinit_weno = 1
 # Smoothing
 ave_diff_niter = 5
 ave_diff_dt = 0.1
-ave_diff_coef = 1
+ave_diff_coef = 0.3, 0.3, 0.3
 
 err_diff_niter = 20
 err_diff_dt = 0.25
-err_diff_coef = 1
+err_diff_coef = 0.3, 0.3, 0.3
 
 sdf_diff_niter = 5
 sdf_diff_dt = 0.1
-sdf_diff_coef = 1
+sdf_diff_coef = 0.3, 0.3, 0.3
 
 # Update SDF
 beta = 0.5
