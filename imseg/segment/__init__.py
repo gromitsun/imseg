@@ -93,7 +93,7 @@ class ImSeg(object):
         :return:
         """
         # Initialize variables
-        self.thresholds = require_array(kwargs.get('thresholds'), dtype=self.dtype)
+        self.thresholds = require_array(self.kwargs.get('thresholds'), dtype=self.dtype)
         self.nthresh = np.ndim(self.thresholds)
         self.sdf = np.empty((self.nthresh, ) + self.im.shape, dtype=self.dtype)
         self.im_ave = np.empty_like(self.im, dtype=self.dtype)
