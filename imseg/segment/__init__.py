@@ -23,6 +23,11 @@ def prep_dir(path):
 
 
 def proc_num(value):
+    """
+    Input string.
+    If string is numeric, convert to numeric types (float or int),
+    otherwise return the string as it is.
+    """
     try:
         value = float(value)
         if value.is_integer():
@@ -32,7 +37,28 @@ def proc_num(value):
     return value
 
 
+def proc_list(value):
+    """
+    Convert string to list.
+    """
+    if ',' in value:
+        value = [proc_num(v.strip()) for v in value.split(',')]
+    return value
+
+
+def proc_slice(value):
+    """
+    Convert string to slice object.
+    """
+    if (type(v) is str) and (':' in v):
+        value = slice(*[int(x) if x != '' else None for x in value.split(':')])
+    return value
+
+
 def read_input(filename, comment='#', sep='='):
+    """
+    Read input from a text file into a dictionary.
+    """
     kwargs = {}
     with open(filename, 'r') as f:
         s = f.readlines()
@@ -84,8 +110,8 @@ class ImSeg(object):
                                     dt=self.kwargs['init_reinit_dt'],
                                     niter=self.kwargs['init_reinit_niter'],
                                     subcell=self.kwargs['init_reinit_subcell'],
-                                    WENO=self.kwargs['init_reinit_subcell'],
-                                    verbos=self.verbose)
+                                    WENO=self.kwargs['init_reinit_weno'],
+                                    verbos=True)
 
     def assertion(self):
         assert self.im_error.shape == self.im.shape
@@ -121,8 +147,8 @@ class ImSeg(object):
                                         dt=self.kwargs['reinit_dt'],
                                         niter=self.kwargs['reinit_niter'],
                                         subcell=self.kwargs['reinit_subcell'],
-                                        WENO=self.kwargs['reinit_subcell'],
-                                        verbos=self.verbose)
+                                        WENO=self.kwargs['reinit_weno'],
+                                        verbos=True)
             
             # Calculating means and error with the updated SDF
             print('Calculating means and error with the updated SDF ...')
@@ -220,6 +246,7 @@ class ImSeg(object):
         print('Calculating means and error with the loaded SDF ...')
         update_regions(self.im, self.sdf, self.im_ave, self.im_error)
         print('Done!')
+
 
 def _dump_dict(d, indent=0):
     out = ''
