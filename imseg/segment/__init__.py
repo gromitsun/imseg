@@ -50,7 +50,7 @@ def proc_slice(value):
     """
     Convert string to slice object.
     """
-    if (type(v) is str) and (':' in v):
+    if (type(value) is str) and (':' in value):
         value = slice(*[int(x) if x != '' else None for x in value.split(':')])
     return value
 
