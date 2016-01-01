@@ -1,0 +1,18 @@
+# Data file
+path2data = /Volumes/HGST15/APS1510/S1C_CR2/proj_0453/recon/recon_t_10_z_0_799.bin
+data_shape = 800, 1750, 1550
+data_slice = :50,:,:
+
+# Parameters file
+paras_file = parameters.txt
+
+# Total number of iterations
+niter = 50
+
+# Output
+outdir = /Volumes/HGST15/APS1510/S1C_CR2/proj_0453/sdf_segment/test/
+niter_out = 10
+
+# Plotting
+niter_plot = 1
+plot_slice = 200,:,:

@@ -1,0 +1,30 @@
+# Thresholds
+thresholds = 0.6
+
+# Initialization
+init_reinit_dt = 0.1
+init_reinit_niter = 50
+init_reinit_subcell = 1
+init_reinit_weno = 1
+
+# Reinitialization
+reinit_dt = 0.1
+reinit_niter = 5
+reinit_subcell = 1
+reinit_weno = 1
+
+# Smoothing
+ave_diff_niter = 5
+ave_diff_dt = 0.1
+ave_diff_coef = 1
+
+err_diff_niter = 20
+err_diff_dt = 0.25
+err_diff_coef = 1
+
+sdf_diff_niter = 5
+sdf_diff_dt = 0.1
+sdf_diff_coef = 1
+
+# Update SDF
+beta = 0.5
