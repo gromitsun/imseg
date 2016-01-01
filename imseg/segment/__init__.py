@@ -207,8 +207,7 @@ class ImSeg(object):
 
     def save(self, prefix='imseg_iter_', fmt='bin'):
         prep_dir(prefix)
-        if outname is None:
-            outname = '%s%d.%s' % (prefix, self.iter_count, fmt)
+        outname = '%s%d.%s' % (prefix, self.iter_count, fmt)
         print('Writing output to file %s ...' % outname)    
         if fmt == 'mat':
             sio.savemat(outname,
