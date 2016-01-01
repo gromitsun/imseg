@@ -1,6 +1,6 @@
 # Data file
 path2data = /Volumes/HGST15/APS1510/S1C_CR2/proj_0453/recon/recon_t_10_z_0_799.bin
-data_shape = 800, 1750, 1550
+data_shape = 800, 2560, 2560 #1750, 1550
 data_slice = :50,:,:
 
 # Parameters file
