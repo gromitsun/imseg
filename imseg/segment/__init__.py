@@ -101,6 +101,7 @@ class ImSeg(object):
         self.iter_count = 0
 
         # Initialize regions
+        print('Initializing SDF and calculating im_ave & im_error ...')
         init_regions(self.im, self.thresholds, self.im_ave, self.im_error, self.sdf)
         
         # Reinitialize SDF
@@ -225,6 +226,7 @@ class ImSeg(object):
 
     def load(self, path2file, dtype='float32', iter_count=None, thresholds=None):
         fmt = os.path.splitext(path2file)[-1]
+        print('Loading segmentation from file %s ...' % path2file)
         if fmt == 'npz':
             a = np.load(path2file)
             self.thresholds = a['thresholds']
@@ -239,6 +241,8 @@ class ImSeg(object):
             self.thresholds = thresholds
             self.sdf = np.fromfile(path2file, dtype=dtype).reshape(thresholds.shape+self.im.shape)
             self.iter_count = iter_count
+        else:
+            raise KeyError('File format not understood!')
         # Reinitialize variables
         self.nthresh = np.ndim(self.thresholds)
         self.im_ave = np.empty_like(self.im, dtype=self.dtype)

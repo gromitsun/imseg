@@ -15,4 +15,4 @@ niter_out = 10
 
 # Plotting
 niter_plot = 1
-plot_slice = 200,:,:
+plot_slice = 25,:,:
