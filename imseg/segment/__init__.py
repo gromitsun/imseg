@@ -111,7 +111,7 @@ class ImSeg(object):
                                     niter=self.kwargs['init_reinit_niter'],
                                     subcell=self.kwargs['init_reinit_subcell'],
                                     WENO=self.kwargs['init_reinit_weno'],
-                                    verbos=True)
+                                    verbose=True)
 
     def assertion(self):
         assert self.im_error.shape == self.im.shape
@@ -148,7 +148,7 @@ class ImSeg(object):
                                         niter=self.kwargs['reinit_niter'],
                                         subcell=self.kwargs['reinit_subcell'],
                                         WENO=self.kwargs['reinit_weno'],
-                                        verbos=True)
+                                        verbose=True)
             
             # Calculating means and error with the updated SDF
             print('Calculating means and error with the updated SDF ...')
