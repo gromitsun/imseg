@@ -14,7 +14,9 @@ def init(float[:, :] arr, float[:] thresholds, float[:, :] ave, float[:, :] err,
 
     cdef char[:, :] labels = np.empty((nx, ny), dtype='uint8')
 
+    # Calculate piecewise constant image and im_error
     with nogil:
+        # Categorize pixels into regions and calculate regional sums
         for x in prange(nx):
             for y in xrange(ny):
                 sdf[0, x, y] = arr[x, y] - thresholds[0]
@@ -34,14 +36,17 @@ def init(float[:, :] arr, float[:] thresholds, float[:, :] ave, float[:, :] err,
                             region_count[i] += 1
                             labels[x, y] = i
                             break
-
+        # Calculate regional means
         for i in prange(nthresholds):
             region_values[i] /= region_count[i]
 
         for x in prange(nx):
             for y in xrange(ny):
+                # Calculate im_ave
                 ave[x, y] = region_values[labels[x, y]]
+                # Calculate im_error
                 err[x, y] = arr[x, y] - ave[x, y]
+                # Normalize SDF
                 for i in xrange(nthresholds):
                     sdf[i, x, y] /= (region_values[i + 1] - region_values[i])
 
@@ -56,7 +61,9 @@ def update(float[:, :] arr, float[:, :, :] sdf, float[:, :] ave, float[:, :] err
 
     cdef char[:, :] labels = np.empty((nx, ny), dtype='uint8')
 
+    # Calculate piecewise constant image and im_error
     with nogil:
+        # Categorize pixels into regions and calculate regional sums
         for x in prange(nx):
             for y in xrange(ny):
                 if sdf[0, x, y] <= 0:
@@ -74,10 +81,12 @@ def update(float[:, :] arr, float[:, :, :] sdf, float[:, :] ave, float[:, :] err
                             region_count[i] += 1
                             labels[x, y] = i
                             break
-
+        
+        # Calculate regional means
         for i in prange(nthresholds):
             region_values[i] /= region_count[i]
-
+        
+        # Calculate im_ave & im_error
         for x in prange(nx):
             for y in xrange(ny):
                 ave[x, y] = region_values[labels[x, y]]
