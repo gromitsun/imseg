@@ -5,6 +5,7 @@ import scipy.io as sio
 # matplotlib.use('Agg') # Must be before importing matplotlib.pyplot or pylab!
 import matplotlib.pyplot as plt
 import os
+from datetime import datetime
 import im3D.sdf.inplace
 import im3D.smoothing.inplace
 from imseg.regions import init_regions, update_regions
@@ -78,10 +79,13 @@ def read_input(filename, comment='#', sep='='):
     return kwargs
 
 
-def dump_file(infile, outfile, verbose=True):
+def dump_file(infile, outfile, verbose=True, write_time=True):
     prep_dir(outfile)
-    print(u'{0:s} -> {0:s}'.format(infile, outfile))
+    if verbose:
+        print(u'{0:s} -> {0:s}'.format(infile, outfile))
     with open(infile, 'r') as fin, open(outfile, 'a') as fout:
+        if write_time:
+            fout.write(u'* * * {0:s} * * *'.format(datetime()))
         fout.writelines(fin.readlines())
 
 

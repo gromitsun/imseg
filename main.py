@@ -27,7 +27,7 @@ for i, x in enumerate(data_slice):
     data_slice[i] = proc_slice(x)
 
 print('Reading data file %s ...' % settings['path2data'])
-im = np.fromfile(settings['path2data']).reshape(settings['data_shape'])[data_slice]
+im = np.fromfile(settings['path2data'], dtype=settings['dtype']).reshape(settings['data_shape'])[data_slice]
 
 print('Initializing ImSeg object ...')
 seg = ImSeg(im, **paras)

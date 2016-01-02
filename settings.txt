@@ -1,5 +1,6 @@
 # Data file
 path2data = /Volumes/HGST15/APS1510/S1C_CR2/proj_0453/recon/postprocess/rmbg/object_pre_t_10_z_0_399.bin
+dtype = float32
 data_shape = 400, 1750, 1550
 data_slice = :50,:,:
 
