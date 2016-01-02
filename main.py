@@ -14,8 +14,8 @@ print('Reading parameters file %s ...' % settings['paras_file'])
 paras = read_input(settings['paras_file'])
 
 # Copy input files to output directory
-dump_file(settings_file, settings['outdir'])
-dump_file(settings['paras_file'], settings['outdir'])
+dump_file(settings_file, settings['outdir']+'settings.txt')
+dump_file(settings['paras_file'], settings['outdir']+'parameters.txt')
 
 print('* * * Settings * * *')
 print(dump_dict(settings))
