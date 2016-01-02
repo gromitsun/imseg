@@ -1,6 +1,6 @@
 import sys
 import numpy as np
-from imseg.segment import read_input, ImSeg, proc_slice
+from imseg.segment import read_input, ImSeg, proc_slice, dump_dict, dump_file
 
 try:
     settings_file = sys.argv[1]
@@ -8,15 +8,28 @@ except IndexError:
     print('Error: expect input settings file!')
     sys.exit(-1)
 
+print('Reading settings file %s ...' % settings_file)
 settings = read_input(settings_file)
+print('Reading parameters file %s ...' % settings['paras_file'])
 paras = read_input(settings['paras_file'])
+
+# Copy input files to output directory
+dump_file(settings_file, settings['outdir'])
+dump_file(settings['paras_file'], settings['outdir'])
+
+print('* * * Settings * * *')
+print(dump_dict(settings))
+print('* * * Parameters * * *')
+print(dump_dict(paras))
 
 data_slice = settings['data_slice']
 for i, x in enumerate(data_slice):
     data_slice[i] = proc_slice(x)
 
+print('Reading data file %s ...' % settings['path2data'])
 im = np.fromfile(settings['path2data']).reshape(settings['data_shape'])[data_slice]
 
+print('Initializing ImSeg object ...')
 seg = ImSeg(im, **paras)
 
 if 'continue' in settings:
