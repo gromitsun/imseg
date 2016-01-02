@@ -78,6 +78,13 @@ def read_input(filename, comment='#', sep='='):
     return kwargs
 
 
+def dump_file(infile, outfile, verbose=True):
+    prep_dir(outfile)
+    print(u'{0:s} -> {0:s}'.format(infile, outfile))
+    with open(infile, 'r') as fin, open(outfile, 'a') as fout:
+        fout.writelines(fin.readlines())
+
+
 class ImSeg(object):
     def __init__(self, im, **kwargs):
         self.im = np.asarray(im)
@@ -202,7 +209,7 @@ class ImSeg(object):
         prep_dir(outpath)
         print('Writing parameters into file %s ...' % outpath)
         f = open(outpath, 'w')
-        f.writelines(_dump_dict(self.kwargs))
+        f.writelines(dump_dict(self.kwargs))
         f.close()
 
     def save(self, prefix='imseg_iter_', fmt='bin'):
@@ -252,12 +259,12 @@ class ImSeg(object):
         print('Done!')
 
 
-def _dump_dict(d, indent=0):
+def dump_dict(d, indent=0):
     out = ''
     for key, value in d.iteritems():
         out += '\t' * indent + str(key) + '\n'
         if isinstance(value, dict):
-            out += _dump_dict(value, indent + 1)
+            out += dump_dict(value, indent + 1)
         else:
             out += '\t' * (indent + 1) + str(value) + '\n'
     return out
