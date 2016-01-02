@@ -85,7 +85,7 @@ def dump_file(infile, outfile, verbose=True, write_time=True):
         print(u'{0:s} -> {0:s}'.format(infile, outfile))
     with open(infile, 'r') as fin, open(outfile, 'a') as fout:
         if write_time:
-            fout.write(u'* * * {0:s} * * *'.format(datetime()))
+            fout.write(u'* * * {0:s} * * *'.format(datetime.now()))
         fout.writelines(fin.readlines())
 
 
