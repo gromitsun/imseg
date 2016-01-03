@@ -3,13 +3,17 @@ thresholds = 0.6
 
 # Initialization
 init_reinit_dt = 0.1
-init_reinit_niter = 50
+init_reinit_tol = 1e-3
+init_reinit_band = 3.0
+init_reinit_max_it = 50
 init_reinit_subcell = 1
 init_reinit_weno = 1
 
 # Reinitialization
 reinit_dt = 0.1
-reinit_niter = 5
+reinit_tol = 1e-3
+reinit_band = 3.0
+reinit_max_it = 50
 reinit_subcell = 1
 reinit_weno = 1
 

@@ -120,7 +120,9 @@ class ImSeg(object):
         for i in xrange(self.nthresh):
             im3D.sdf.inplace.reinit(self.sdf[i], self.sdf[i], 
                                     dt=self.kwargs['init_reinit_dt'],
-                                    niter=self.kwargs['init_reinit_niter'],
+                                    tol=self.kwargs['init_reinit_tol'],
+                                    band=self.kwargs['init_reinit_band'],
+                                    max_it=self.kwargs['init_reinit_max_it'],
                                     subcell=self.kwargs['init_reinit_subcell'],
                                     WENO=self.kwargs['init_reinit_weno'],
                                     verbose=True)
@@ -157,7 +159,9 @@ class ImSeg(object):
             for i in xrange(self.nthresh):
                 im3D.sdf.inplace.reinit(self.sdf[i], self.sdf[i], 
                                         dt=self.kwargs['reinit_dt'],
-                                        niter=self.kwargs['reinit_niter'],
+                                        tol=self.kwargs['reinit_tol'],
+                                        band=self.kwargs['reinit_band'],
+                                        max_it=self.kwargs['reinit_max_it'],
                                         subcell=self.kwargs['reinit_subcell'],
                                         WENO=self.kwargs['reinit_weno'],
                                         verbose=True)
