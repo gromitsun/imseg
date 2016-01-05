@@ -180,7 +180,7 @@ class ImSeg(object):
             plt.imshow(self.im[im_slice], interpolation='nearest', cmap='gray')
             plt.contour(self.sdf[i][im_slice], levels=[0], colors='r')
             if outdir is not None:
-                plt.savefig(outdir + '/contour-%d_iter_%d' % (i+1, self.iter_count))
+                plt.savefig(os.path.join(outdir, 'contour-%d_iter_%d') % (i+1, self.iter_count))
         if show is True:
             if outdir is None:
                 plt.show()
@@ -193,20 +193,20 @@ class ImSeg(object):
         plt.colorbar()
         if outdir is not None:
             prep_dir(outdir)
-            plt.savefig(outdir + 'im_ave_iter_%d' % self.iter_count)
+            plt.savefig(os.path.join(outdir, 'im_ave_iter_%d') % self.iter_count)
         plt.figure('im_error')
         plt.title('im_error, iteration %d' % self.iter_count)
         plt.imshow(self.im_error[im_slice])
         plt.colorbar()
         if outdir is not None:
-            plt.savefig(outdir + 'im_error_iter_%d' % self.iter_count)
+            plt.savefig(os.path.join(outdir, 'im_error_iter_%d') % self.iter_count)
         for i in xrange(self.nthresh):
             plt.figure('SDF-%d' % (i + 1))
             plt.title('SDF-%d, iteration %d' % (i + 1, self.iter_count))
             plt.imshow(self.sdf[i][im_slice])
             plt.colorbar()
             if outdir is not None:
-                plt.savefig(outdir + 'SDF-%d_iter_%d' % (i + 1, self.iter_count))
+                plt.savefig(os.path.join(outdir, 'SDF-%d_iter_%d') % (i + 1, self.iter_count))
         self.plot_contour(im_slice=im_slice, outdir=outdir, show=False)
         if outdir is None:
             plt.show()
@@ -226,9 +226,9 @@ class ImSeg(object):
         print('Writing output to file %s ...' % outname)    
         if fmt == 'mat':
             sio.savemat(outname,
-                        {'thresholds':self.thresholds,
-                        'sdf':self.sdf,
-                        'iter_count':self.iter_count})
+                        {'thresholds': self.thresholds,
+                        'sdf': self.sdf,
+                        'iter_count': self.iter_count})
         elif fmt == 'npz':
             np.savez(outname,
                      thresholds=self.thresholds,

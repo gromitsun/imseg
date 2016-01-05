@@ -42,7 +42,7 @@ else:
 
 for data_file in data_file_list:
     outsubdir = os.path.splitext(os.path.basename(data_file))[0]
-    outdir = os.path.join(settings['outdir'], outsubdir)
+    outdir = os.path.join(settings['outdir'], outsubdir, '')
     # Read data file
     print('Reading data file %s ...' % data_file)
     im = np.fromfile(data_file, dtype=settings['dtype']).reshape(settings['data_shape'])[data_slice]
@@ -70,7 +70,7 @@ for data_file in data_file_list:
         seg.iterate(niter=1)
         print('Completed 1 iteration in {} seconds.'.format(time()-start))
         if (seg.iter_count % niter_out) == 0:
-            seg.save(prefix=outdir + 'sdf_iter_', fmt='bin')
+            seg.save(prefix=os.path.join(outdir, 'sdf_iter_'), fmt='bin')
         if (seg.iter_count % niter_plot) == 0:
             seg.plot(outdir=outdir, im_slice=plot_slice)
 
