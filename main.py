@@ -34,11 +34,11 @@ for i, x in enumerate(data_slice):
     data_slice[i] = proc_slice(x)
 
 if type(settings['path2data']) is not list:
-    data_file_list = glob.glob(settings['path2data'])
+    data_file_list = sorted(glob.glob(settings['path2data']))
 else:
     data_file_list = []
     for i in settings['path2data']:
-        data_file_list.append(glob.glob(i))
+        data_file_list.append(sorted(glob.glob(i)))
 
 for data_file in data_file_list:
     outsubdir = os.path.splitext(os.path.basename(data_file))[0]
